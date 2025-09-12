@@ -1,0 +1,9 @@
+name: generative-journey
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - torch
+    - scikit-learn
+    - matplotlib
+

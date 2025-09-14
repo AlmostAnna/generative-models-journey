@@ -2,8 +2,10 @@ name: generative-journey
 dependencies:
   - python=3.10
   - pip
+  - jupyterlab
+  - ipykernel
+  - matplotlib
   - pip:
     - torch
     - scikit-learn
-    - matplotlib
 

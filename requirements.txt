@@ -1,6 +1,7 @@
 torch>=2.0
 scikit-learn
 matplotlib
+jupyterlab
+ipykernel
 tqdm
-jupyter
 

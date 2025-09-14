@@ -41,9 +41,18 @@ git clone https://github.com/your-username/generative-models-journey.git
 cd generative-models-journey
 
 # Install dependencies
+# For conda users(recommended):
+conda env create -f environment.yml
+conda activate generative-journey
+python -m ipykernel install --user --name generative-journey
+
+# For pip users:
+python -m venv generative-journey
+source generative-journey/bin/activate  # Linux/Mac
+# generative-journey\Scripts\activate  # Windows
 pip install -r requirements.txt
 
-# Launch Jupyter
-jupyter notebook
+# Launch Jupyter lab
+jupyter lab
 ```
 Then open any notebook in notebooks/.

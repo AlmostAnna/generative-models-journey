@@ -39,15 +39,16 @@ def plot_real_data(x_real, title="Two-Moons Dataset (Normalized)", save_path=Non
         plt.savefig(save_path, dpi=120, bbox_inches='tight')
     plt.show()
 
-def save_gif():
-    # TODO need to save all pictures in ../figures
+def save_training_gif(location, giffile="diffusion_training.gif"):
     # Find all saved images
-    # TODO do we need to remove existing images from the previous run early in the set up stage? 
-    png_files = sorted(glob.glob("step_*.png"))
+    print("Looking for png files in ", location)
 
+    png_files = sorted(glob.glob(location+"/step_*.png"))
+    print("png_files from training:", png_files)
+    
     if png_files:
     # Build GIF
-#        with imageio.get_writer("diffusion_training.gif", mode='I', fps=1) as writer:
+#        with imageio.get_writer(giffile, mode='I', fps=1) as writer:
 #            for filename in png_files:
 #                image = imageio.v2.imread(filename)
 #                writer.append_data(image)

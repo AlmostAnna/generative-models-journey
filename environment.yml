@@ -5,7 +5,13 @@ dependencies:
   - jupyterlab
   - ipykernel
   - matplotlib
+  - tqdm
   - pip:
     - torch
     - scikit-learn
+    - imageio
+
+# Set environment variables
+variables:
+  KMP_DUPLICATE_LIB_OK: TRUE
 

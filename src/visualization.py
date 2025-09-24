@@ -6,9 +6,11 @@ from pathlib import Path
 try:
     from .utils import get_data
     from .diffusion import ddim_sample
+    from .ebm import annealed_langevin_sampler
 except ImportError:
     from utils import get_data
     from diffusion import ddim_sample
+    from ebm import annealed_langevin_sampler
 
 def plot_real_vs_generated(
     model, 
@@ -18,19 +20,33 @@ def plot_real_vs_generated(
     loss=None,
     loss_history=None,
     step_history=None,
-    figures_path="figures"
+    figures_path="figures",
+    generated_data=None,  # accept pre-generated data
+    sampling_function=None,  # accept sampling function
+    enforce_positive_y=False
 ):
     """
     Sample from model and plot real vs generated + loss curve.
     """
-    model.eval()
-    
+    model.eval() if model else None
+
     # Get real data
     x_real = get_data(n_samples).cpu().numpy()
-    
+
     # Generate samples
-    with torch.no_grad():
-        x_gen = ddim_sample(model, steps=50, n=n_samples, device=device).cpu().numpy()
+    if generated_data is not None:
+        # Use pre-generated data
+        x_gen = generated_data
+    elif model is not None and sampling_function is not None:
+        # Use provided sampling function
+        with torch.no_grad():
+            x_gen = sampling_function(model, n_samples, device).cpu().numpy()
+    elif model is not None:
+        # Default: use DDIM sampling (backward compatibility)
+        with torch.no_grad():
+            x_gen = ddim_sample(model, steps=50, n=n_samples, device=device).cpu().numpy()
+    else:
+        raise ValueError("Must provide either generated_data or model with sampling function")
 
     # Create 2x2 plot
     fig = plt.figure(figsize=(12, 8))
@@ -63,7 +79,8 @@ def plot_real_vs_generated(
     plt.ylabel("Loss")
     plt.title("Loss Curve")
     plt.grid(True, alpha=0.3)
-    plt.ylim(bottom=0)
+    if enforce_positive_y:
+        plt.ylim(bottom=0)
     if loss_history and len(loss_history) > 1:
         plt.legend()
 
@@ -75,9 +92,9 @@ def plot_real_vs_generated(
     plt.savefig(figures_path / f"step_{step:05d}.png", dpi=120, bbox_inches='tight')
     plt.show()
     
-    model.train()
+    model.train() if model else None
 
-def plot_loss_curve(loss_history, step_history, save_path=None):
+def plot_loss_curve(loss_history, step_history, save_path=None, enforce_positive_y=False):
     """Plot just the loss curve."""
     plt.figure(figsize=(10, 6))
     plt.plot(step_history, loss_history, color='green', linewidth=2)
@@ -85,7 +102,8 @@ def plot_loss_curve(loss_history, step_history, save_path=None):
     plt.ylabel("Loss")
     plt.title("Training Loss")
     plt.grid(True, alpha=0.3)
-    plt.ylim(bottom=0)
+    if enforce_positive_y:
+        plt.ylim(bottom=0)
     
     if save_path:
         plt.savefig(save_path, dpi=120, bbox_inches='tight')

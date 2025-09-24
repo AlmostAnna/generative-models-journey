@@ -1,15 +1,16 @@
+import os
 import sys
 from pathlib import Path
 
-# Add src to path
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from training import train_model
-
-if __name__ == "__main__":
+def main():
     import argparse
     
-    parser = argparse.ArgumentParser(description='Train diffusion model')
+    parser = argparse.ArgumentParser(description='Train generative models')
+    parser.add_argument('model_type', choices=['diffusion', 'ebm'], 
+                       help='Type of model to train')
     parser.add_argument('--epochs', type=int, default=20000, help='Number of epochs')
     parser.add_argument('--batch-size', type=int, default=1024, help='Batch size')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
@@ -19,14 +20,31 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    model, history = train_model(
-        n_epochs=args.epochs,
-        batch_size=args.batch_size,
-        learning_rate=args.lr,
-        device=args.device,
-        checkpoint_interval=args.checkpoint_interval,
-        visualize=not args.no_visualize
-    )
-    
-    print("Training completed!")
-    print(f"Final loss: {history['final_loss']:.3f}")
+    if args.model_type == 'diffusion':
+        from src.training import train_model
+        model, history = train_model(
+            n_epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            device=args.device,
+            checkpoint_interval=args.checkpoint_interval,
+            visualize=not args.no_visualize
+        )
+        print("Finished training diffusion model.")
+        print(f"Final loss: {history['final_loss']:.3f}")
+
+    elif args.model_type == 'ebm':
+        from src.training import train_ebm_model
+        model, history = train_ebm_model(
+            n_epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            device=args.device,
+            checkpoint_interval=args.checkpoint_interval,
+            visualize=not args.no_visualize
+        )
+        print("Finished training energy-based model.")
+        print(f"Final loss: {history['final_loss']:.3f}")
+        
+if __name__ == "__main__":
+    main()

@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -11,6 +12,52 @@ except ImportError:
     from utils import get_data
     from diffusion import ddim_sample
     from ebm import annealed_langevin_sampler
+
+def plot_energy_landscape_unified(model, data=None, title="Energy Landscape", 
+                                style='filled', colormap='viridis_r', show_data=True):
+    """
+    Unified energy landscape plotting function
+    
+    Parameters:
+    - style: 'filled', 'lines', or 'both'
+    - colormap: matplotlib colormap name
+    - show_data: whether to overlay data points if provided
+    """
+    xx = torch.linspace(-4, 4, 100)
+    yy = torch.linspace(-4, 4, 100)
+    X, Y = torch.meshgrid(xx, yy)
+    grid = torch.stack([X.ravel(), Y.ravel()], dim=1)
+    
+    with torch.no_grad():
+        energies = model(grid).reshape(100, 100)
+    
+    plt.figure(figsize=(6, 6))
+    
+    if style in ['filled', 'both']:
+        # Filled contours
+        cs_fill = plt.contourf(X.numpy(), Y.numpy(), energies.numpy(), 
+                              levels=50, cmap=colormap, alpha=0.8)
+        if style == 'filled':
+            plt.colorbar(cs_fill, label='Energy')
+    
+    if style in ['lines', 'both']:
+        # Contour lines
+        levels = np.linspace(energies.min(), energies.max(), 15)
+        cs_lines = plt.contour(X.numpy(), Y.numpy(), energies.numpy(), 
+                              levels=levels, alpha=0.7, colors='black', linewidths=0.5)
+    
+    if show_data and data is not None:
+        plt.scatter(data[:,0], data[:,1], s=3, c='red', alpha=0.6, 
+                   label='True Data', zorder=5)
+    
+    plt.title(title)
+    plt.xlabel('$x_1$'); plt.ylabel('$x_2$')
+    if show_data and data is not None:
+        plt.legend()
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.tight_layout()
+    plt.show()
+
 
 def plot_real_vs_generated(
     model, 

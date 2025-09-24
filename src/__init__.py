@@ -13,6 +13,7 @@ try:
     from .utils import get_data, plot_real_data
     from .diffusion import get_alpha_bar, positional_encoding, ScoreModel, ddim_sample
     from .ebm import annealed_langevin_sampler, EnergyModel, TGMixtureEnergy, sample_two_mixture
+    from .visualization import plot_energy_landscape_unified
     from .training import train_model, train_ebm_model
 except ImportError as e:
     print(f"\n src package import failed: {e}")
@@ -29,6 +30,7 @@ __all__ = [
     'annealed_langevin_sampler',
     'TGMixtureEnergy',
     'sample_two_mixture',
+    'plot_energy_landscape_unified',
     'train_model',
     'train_ebm_model',
 ]

@@ -25,7 +25,7 @@ def plot_energy_landscape_unified(model, data=None, title="Energy Landscape",
     """
     xx = torch.linspace(-4, 4, 100)
     yy = torch.linspace(-4, 4, 100)
-    X, Y = torch.meshgrid(xx, yy)
+    X, Y = torch.meshgrid(xx, yy, indexing='ij')
     grid = torch.stack([X.ravel(), Y.ravel()], dim=1)
     
     with torch.no_grad():

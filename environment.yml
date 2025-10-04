@@ -1,4 +1,8 @@
 name: generative-journey
+channels:
+  - pyro
+  - conda-forge
+  - defaults
 dependencies:
   - python=3.10
   - pip
@@ -6,6 +10,9 @@ dependencies:
   - ipykernel
   - matplotlib
   - tqdm
+  - arviz
+  - scipy
+  - pyro-ppl
   - pip:
     - torch
     - scikit-learn

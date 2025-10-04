@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from pathlib import Path
+from scipy.stats import gaussian_kde
 
 # Handle imports
 try:
@@ -12,6 +13,61 @@ except ImportError:
     from utils import get_data
     from diffusion import ddim_sample
     from ebm import annealed_langevin_sampler
+
+def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):
+    n_samplers = len(sampler_samples_dict)
+    total_plots = n_samplers + 1  # +1 for true distribution plot
+    
+    # Calculate grid dimensions
+    n_cols = 2
+    n_rows = (total_plots + 1) // 2  # This ensures we have enough rows
+    
+    # Create a grid for contour
+    x_min, x_max = true_samples[:, 0].min() - 1, true_samples[:, 0].max() + 1
+    y_min, y_max = true_samples[:, 1].min() - 1, true_samples[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100), 
+                         np.linspace(y_min, y_max, 100))
+    grid_points = np.c_[xx.ravel(), yy.ravel()]
+
+    # Use KDE to estimate density
+    kde = gaussian_kde(true_samples.T)
+    Z = kde(grid_points.T).reshape(xx.shape)
+
+    # Create subplots with dynamic sizing
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 5*n_rows))
+    
+    # Handle case where there's only one row or one subplot
+    if n_rows == 1:
+        axes = axes.reshape(1, -1)
+    elif total_plots == 1:  # Only true samples, no samplers
+        axes = axes.reshape(1, -1)
+    axes = axes.ravel()
+
+    # True samples (contour + scatter) - always in first subplot
+    ax = axes[0]
+    ax.contour(xx, yy, Z, levels=10, alpha=0.5, colors='black', linewidths=0.5)
+    ax.scatter(true_samples[:, 0], true_samples[:, 1], alpha=0.3, s=1, c='blue', label='True Samples')
+    ax.set_title(f"True Distribution ({name})")
+    ax.set_xlabel("$x_1$")
+    ax.set_ylabel("$x_2$")
+    ax.axis("equal")
+
+    # Plot each sampler
+    for idx, (name, samples) in enumerate(sampler_samples_dict.items()):
+        ax = axes[idx + 1]  # +1 because first subplot is for true distribution
+        ax.contour(xx, yy, Z, levels=10, alpha=0.5, colors='black', linewidths=0.5)
+        ax.scatter(samples[:, 0], samples[:, 1], alpha=0.6, s=10, label=name)
+        ax.set_title(f"{name} Samples vs True Contour")
+        ax.set_xlabel("$x_1$")
+        ax.set_ylabel("$x_2$")
+        ax.axis("equal")
+
+    # Hide any unused subplots
+    for idx in range(total_plots, len(axes)):
+        axes[idx].set_visible(False)
+
+    plt.tight_layout()
+    plt.show()    
 
 def plot_energy_landscape_unified(model, data=None, title="Energy Landscape", 
                                 style='filled', colormap='viridis_r', show_data=True):

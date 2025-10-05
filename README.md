@@ -17,8 +17,8 @@ All experiments are conducted on the **two-moons dataset**, a simple 2D benchmar
 
 ## Table of Contents
 
-### [MCMC: Why HMC Outperforms MALA](notebooks/mala-vs-hmc-story.ipynb) *(Coming Soon)*
-- Compares **Metropolis-Adjusted Langevin (MALA)** and **Hamiltonian Monte Carlo (HMC)**
+### [Sampling Is Not Solved: Silent Failures in Modern MCMC](notebooks/mcmc-story.ipynb)
+- Compares some MCMC methods on challenging distributions (banana and two-moons)
 
 ### [EBM: The Struggle to Learn the Two Moons](notebooks/ebm-story.ipynb)
 - Trains an Energy-Based Model with Langevin and Contrastive Divergence

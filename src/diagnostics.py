@@ -1,8 +1,123 @@
+"""
+MCMC Diagnostics Toolkit
+========================
+
+A collection of functions for evaluating MCMC samplers on multi-modal distributions.
+Designed with the lessons from the 'Sampling Is Not Solved' notebook.
+
+Key principles:
+- Never trust ESS alone
+- Visualize everything
+- Assume silent failure until proven otherwise
+"""
+
 import numpy as np
 import arviz as az
 import matplotlib.pyplot as plt
+from scipy.stats import wasserstein_distance
 
 import pandas as pd
+
+def compute_ess_safe(samples, method="bulk"):
+    """
+    Compute ESS with safety: clips to number of samples.
+    
+    Args:
+        samples: (N, D) array of samples
+        method: "bulk", "tail", or "quantile"
+    
+    Returns:
+        float: min ESS across dimensions, clipped at N
+    """
+    n_samples = len(samples)
+    idata = az.convert_to_inference_data(samples[None, :, :])  # (chain=1, sample, dim)
+    ess_raw = az.ess(idata, method=method)["x"].min().item()  # worst-case dim
+    return min(ess_raw, n_samples)
+
+
+def compute_w1_distance(true_samples, sampler_samples, n=1000):
+    """
+    Compute 1-Wasserstein distance between two samples (simplified).
+    
+    Args:
+        true_samples: (N1, D)
+        sampler_samples: (N2, D)
+        n: number of points to compare
+    
+    Returns:
+        float: sum of 1D W₁ distances
+    """
+    n = min(n, len(true_samples), len(sampler_samples))
+    w1 = 0.0
+    for i in range(true_samples.shape[1]):
+        w1 += wasserstein_distance(
+            true_samples[:n, i],
+            sampler_samples[:n, i]
+        )
+    return w1
+
+
+def analyze_chain_diversity(sampler_samples_dict, threshold=1.0):
+    """
+    Check if chains explored diverse regions.
+    
+    Args:
+        sampler_samples_dict: dict of name -> (N, 2) samples
+        threshold: min distance between chain means to count as "diverse"
+    
+    Returns:
+        dict: per-sampler diversity report
+    """
+    report = {}
+    for name, samples in sampler_samples_dict.items():
+        mean_x = samples.mean(axis=0)
+        std_x = samples.std(axis=0)
+        
+        # If you ran multiple runs, split them
+        if len(samples) > 1500:
+            mid = len(samples) // 2
+            chain1_mean = samples[:mid].mean(axis=0)
+            chain2_mean = samples[mid:].mean(axis=0)
+            dist_between = np.linalg.norm(chain1_mean - chain2_mean)
+            diverse = dist_between > threshold
+        else:
+            chain1_mean = chain2_mean = mean_x
+            dist_between = 0.0
+            diverse = False
+        
+        report[name] = {
+            'overall_mean': mean_x,
+            'chain_separation': dist_between,
+            'diverse': diverse,
+            'std': std_x
+        }
+    return report
+
+
+def full_diagnostic_report(true_samples, sampler_samples_dict, tag=""):
+    """
+    Print a complete diagnostic summary.
+    """
+    print(f"\n{'='*40}")
+    print(f"DIAGNOSTIC REPORT {tag}")
+    print(f"{'='*40}")
+    
+    results = {}
+    for name, samples in sampler_samples_dict.items():
+        ess = compute_ess_safe(samples)
+        w1 = compute_w1_distance(true_samples, samples)
+        results[name] = {'ESS': ess, 'W1': w1}
+        print(f"{name:15} ESS: {ess:6.1f}  W1: {w1:5.3f}")
+    
+    # Chain diversity
+    print(f"\nChain Diversity Check (separation > 1.0?):")
+    diversity = analyze_chain_diversity(sampler_samples_dict)
+    for name, d in diversity.items():
+        sep = d['chain_separation']
+        mark = "Yes" if d['diverse'] else "No"
+        print(f"  {name}: {sep:.3f} {mark}")
+    
+    return results
 
 def plot_diagnostics_grid_az(sampler_samples_dict, max_lag=50, title=None):
     n_samplers = len(sampler_samples_dict)

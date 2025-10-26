@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from cycler import cycler
+
 from pathlib import Path
 from scipy.stats import gaussian_kde
 
@@ -13,6 +15,77 @@ except ImportError:
     from utils import get_data
     from diffusion import ddim_sample
     from ebm import annealed_langevin_sampler
+
+
+class _PlotConfig:
+    def __init__(self):
+        self.colors = {
+            'primary': '#2E86AB',
+            'secondary': '#A23B72',
+            'accent1': '#F18F01',
+            'accent2': '#C73E1D',
+            'neutral': '#6A994E',
+            'light': '#E9EDC9',
+            'dark': '#264653',
+            'real_data': '#2E86AB',
+            'generated_data': '#A23B72',
+            'loss_curve': '#F18F01',
+            'true_contour': 'black',
+        }
+        self.setup_style()
+    
+    def setup_style(self):
+        """Apply the consistent plotting style using matplotlib rcParams."""
+        plt.style.use('seaborn-v0_8-muted')
+
+        # Update rcParams
+        plt.rcParams.update({
+            'figure.figsize': (12, 8),
+            'font.size': 12,
+            'axes.labelsize': 14,
+            'axes.titlesize': 16,
+            'xtick.labelsize': 12,
+            'ytick.labelsize': 12,
+            'legend.fontsize': 12,
+            'figure.dpi': 100,
+            'savefig.dpi': 300,
+            'savefig.bbox': 'tight',
+            'axes.spines.top': False,
+            'axes.spines.right': False,
+            'axes.grid': True,
+            'grid.alpha': 0.3,
+            'axes.prop_cycle': cycler('color', list(self.colors.values())), 
+            # --- Set the DEFAULT colormap ---
+            'image.cmap': 'coolwarm',
+        })
+
+# --- Initialize Configuration ---
+# Create a single instance of the configuration class when the module is imported
+_config = _PlotConfig()
+
+def get_color_palette():
+    """Returns the configured color palette."""
+    return _config.colors
+
+def get_default_figsize():
+    """Returns the configured default figure size."""
+    return tuple(_config.setup_style().get('figure.figsize', (12, 8)))
+
+# Plot real data
+def plot_real_data(x_real, title="Two-Moons Dataset (Normalized)", save_path=None):
+    plt.figure(figsize=(6,6))
+    plt.scatter(x_real[:, 0], x_real[:, 1], s=10, c=_config.colors['real_data'], alpha=0.6, linewidth=0)
+    plt.title(title, fontsize=14)
+    plt.xlabel("$x_1$", fontsize=12)
+    plt.ylabel("$x_2$", fontsize=12)
+    plt.xlim(-3, 3)
+    plt.ylim(-3, 3)
+    plt.grid(True, alpha=0.3)
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.tight_layout()
+    if save_path: 
+        plt.savefig(save_path, dpi=120, bbox_inches='tight')
+    plt.show()
 
 def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):
     n_samplers = len(sampler_samples_dict)
@@ -45,8 +118,10 @@ def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):
 
     # True samples (contour + scatter) - always in first subplot
     ax = axes[0]
-    ax.contour(xx, yy, Z, levels=10, alpha=0.5, colors='black', linewidths=0.5)
-    ax.scatter(true_samples[:, 0], true_samples[:, 1], alpha=0.3, s=1, c='blue', label='True Samples')
+    ax.contour(xx, yy, Z, levels=10, alpha=0.5, colors=_config.colors['true_contour'], linewidths=0.5)
+    ax.scatter(true_samples[:, 0], true_samples[:, 1], alpha=0.3, s=1, c=_config.colors['real_data'], label='True Samples')
+    # ax.scatter(true_samples[:, 0], true_samples[:, 1], alpha=0.3, s=1, c='tab:blue', label='True Samples') # Uses default cycle's blue
+    
     ax.set_title(f"True Distribution ({name})")
     ax.set_xlabel("$x_1$")
     ax.set_ylabel("$x_2$")
@@ -55,7 +130,7 @@ def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):
     # Plot each sampler
     for idx, (name, samples) in enumerate(sampler_samples_dict.items()):
         ax = axes[idx + 1]  # +1 because first subplot is for true distribution
-        ax.contour(xx, yy, Z, levels=10, alpha=0.5, colors='black', linewidths=0.5)
+        ax.contour(xx, yy, Z, levels=10, alpha=0.5, colors=_config.colors['true_contour'], linewidths=0.5)
         ax.scatter(samples[:, 0], samples[:, 1], alpha=0.6, s=10, label=name)
         ax.set_title(f"{name} Samples vs True Contour")
         ax.set_xlabel("$x_1$")
@@ -70,7 +145,7 @@ def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):
     plt.show()    
 
 def plot_energy_landscape_unified(model, data=None, title="Energy Landscape", 
-                                style='filled', colormap='viridis_r', show_data=True):
+                                style='filled', colormap='coolwarm', show_data=True):
     """
     Unified energy landscape plotting function
     
@@ -100,10 +175,10 @@ def plot_energy_landscape_unified(model, data=None, title="Energy Landscape",
         # Contour lines
         levels = np.linspace(energies.min(), energies.max(), 15)
         cs_lines = plt.contour(X.numpy(), Y.numpy(), energies.numpy(), 
-                              levels=levels, alpha=0.7, colors='black', linewidths=0.5)
+                              levels=levels, alpha=0.7, colors=_config.colors['true_contour'], linewidths=0.5)
     
     if show_data and data is not None:
-        plt.scatter(data[:,0], data[:,1], s=3, c='red', alpha=0.6, 
+        plt.scatter(data[:,0], data[:,1], s=3, c=_config.colors['real_data'], alpha=0.6, 
                    label='True Data', zorder=5)
     
     plt.title(title)
@@ -156,7 +231,7 @@ def plot_real_vs_generated(
     
     # Real data
     plt.subplot(2, 2, 1)
-    plt.scatter(x_real[:, 0], x_real[:, 1], s=8, c='blue', alpha=0.7)
+    plt.scatter(x_real[:, 0], x_real[:, 1], s=8, c=_config.colors['real_data'], alpha=0.7)
     plt.xlim(-4, 4)
     plt.ylim(-4, 4)
     plt.title("Real Data")
@@ -165,7 +240,7 @@ def plot_real_vs_generated(
 
     # Generated data
     plt.subplot(2, 2, 2)
-    plt.scatter(x_gen[:, 0], x_gen[:, 1], s=8, c='red', alpha=0.7)
+    plt.scatter(x_gen[:, 0], x_gen[:, 1], s=8, c=_config.colors['generated_data'], alpha=0.7)
     plt.xlim(-4, 4)
     plt.ylim(-4, 4)
     plt.title(f"Generated (Step {step})")
@@ -175,9 +250,9 @@ def plot_real_vs_generated(
     # Loss curve
     plt.subplot(2, 1, 2)  # Span full width
     if loss_history and len(loss_history) > 1:
-        plt.plot(step_history, loss_history, color='green', linewidth=2, label='Training Loss')
+        plt.plot(step_history, loss_history, color=_config.colors['loss_curve'], linewidth=2, label='Training Loss')
         if step_history and loss_history:
-            plt.scatter(step_history[-1], loss_history[-1], color='green', zorder=5)
+            plt.scatter(step_history[-1], loss_history[-1], color=_config.colors['loss_curve'], zorder=5)
     plt.xlabel("Training Step")
     plt.ylabel("Loss")
     plt.title("Loss Curve")
@@ -200,7 +275,7 @@ def plot_real_vs_generated(
 def plot_loss_curve(loss_history, step_history, save_path=None, enforce_positive_y=False):
     """Plot just the loss curve."""
     plt.figure(figsize=(10, 6))
-    plt.plot(step_history, loss_history, color='green', linewidth=2)
+    plt.plot(step_history, loss_history, color=_config.colors['loss_curve'], linewidth=2)
     plt.xlabel("Training Step")
     plt.ylabel("Loss")
     plt.title("Training Loss")

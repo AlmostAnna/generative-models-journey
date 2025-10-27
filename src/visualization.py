@@ -138,6 +138,49 @@ def plot_real_and_generated(real_data, gen_data, distr_title, real_title, gen_ti
     fig.tight_layout(rect=[0, 0, 1, 0.95]) # Leave space at the top
     plt.show()
 
+def plot_comparison(data_2_plot, main_title=""):
+    """
+    Plots scatter plots for multiple datasets in subplots.
+
+    Args:
+        data_2_plot (dict): A dictionary where keys are titles and values are data arrays (e.g., torch tensors or numpy).
+        main_title (str, optional): The main title for the entire figure. Defaults to "".
+    """
+    # Create figure and axes objects
+    fig, axs = plt.subplots(ncols=len(data_2_plot), nrows=1,
+                            figsize=(12, 4), layout='constrained')
+
+    # Add the main title for the entire figure
+    fig.suptitle(main_title, fontsize=16)
+
+    global_color_cycle_list = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    # Create an iterator over this list
+    color_cycle_iterator = iter(global_color_cycle_list)
+    
+    for ax, (title, samples) in zip(axs, data_2_plot.items()):
+        # Convert samples to numpy if they are torch tensors
+        x_data = samples[:, 0].numpy() if hasattr(samples, 'numpy') else samples[:, 0]
+        y_data = samples[:, 1].numpy() if hasattr(samples, 'numpy') else samples[:, 1]
+
+        if title == "Real Data":
+            # Use specific color for Real Data
+            ax.scatter(x_data, y_data, s=5, c=get_color_palette()['real_data'], alpha=0.6)
+        else:
+            #ax.scatter(x_data, y_data, s=5, alpha=0.6) # Uses global cycle
+            # Explicitly get the next color from the global cycle list
+            try:
+                next_color = next(color_cycle_iterator)
+            except StopIteration:
+                # If we run out of colors in the list, loop back to the beginning
+                color_cycle_iterator = iter(global_color_cycle_list) # Reset iterator
+                next_color = next(color_cycle_iterator)             # Get first color again
+
+            # Use the explicitly fetched color for this scatter plot
+            ax.scatter(x_data, y_data, s=5, c=next_color, alpha=0.6)
+
+        ax.set_title(title)
+    plt.show() # Display the plot
+
 def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):
     n_samplers = len(sampler_samples_dict)
     total_plots = n_samplers + 1  # +1 for true distribution plot
@@ -194,6 +237,48 @@ def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):
 
     plt.tight_layout()
     plt.show()    
+
+def plot_chain_trajectories(trace, title="MCMC Chain Trajectories"):
+    plt.figure(figsize=(8, 6))
+    
+    # Plot trajectory of first 10 chains
+    for i in range(min(10, trace.shape[1])):
+        plt.plot(trace[:, i, 0], trace[:, i, 1], '-', alpha=0.6, linewidth=1)
+
+    # Mark start and end
+    plt.scatter(trace[0, :, 0], trace[0, :, 1], s=30, label='Start', zorder=5)
+    plt.scatter(trace[-1, :, 0], trace[-1, :, 1], s=30, label='End', zorder=5)
+
+    plt.scatter([-2, 2], [0, 0], s=100, marker='x', zorder=5, label='True Modes')
+
+    plt.title(title)
+    plt.xlabel('$x_1$'); plt.ylabel('$x_2$')
+    plt.legend()
+    plt.xlim(-4, 4); plt.ylim(-4, 4)
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.tight_layout()
+    plt.show()
+
+    return trace
+
+def plot_historgam(times):
+    colors = get_color_palette()
+
+    plt.figure(figsize=(8, 4))
+    if len(times) > 0:
+        plt.hist(times, bins=30, alpha=0.7, color=colors['neutral'], edgecolor='black')
+        mean_cross = times.mean()
+        plt.axvline(mean_cross, color=colors['accent1'], linestyle='--', label=f'Mean = {mean_cross:.1f}')
+    else:
+        plt.text(0.5, 0.5, 'No chains crossed', transform=plt.gca().transAxes, 
+                 ha='center', va='center', fontsize=14, color=colors['dark'])
+
+    plt.title("First Crossing Time into Opposite Mode")
+    plt.xlabel("Step")
+    plt.ylabel("Number of Chains")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
 def plot_energy_landscape_unified(model, data=None, title="Energy Landscape", 
                                 style='filled', colormap='coolwarm', show_data=True):

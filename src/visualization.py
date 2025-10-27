@@ -19,24 +19,56 @@ except ImportError:
 
 class _PlotConfig:
     def __init__(self):
+#        self.colors = {
+#            'primary': '#2E86AB',
+#            'secondary': '#A23B72',
+#            'accent1': '#F18F01',
+#            'accent2': '#C73E1D',
+#            'neutral': '#6A994E',
+#            'light': '#E9EDC9',
+#            'dark': '#264653',
+#            'real_data': '#2E86AB',
+#            'generated_data': '#A23B72',
+#            'loss_curve': '#F18F01',
+#            'true_contour': 'black',
+#        }
+
         self.colors = {
-            'primary': '#2E86AB',
-            'secondary': '#A23B72',
-            'accent1': '#F18F01',
-            'accent2': '#C73E1D',
+            'primary': '#4878CF',
+            'secondary': '#B47CC7',
+            'accent1': '#D65F5F',
+            'accent2': '#55A868',
             'neutral': '#6A994E',
             'light': '#E9EDC9',
             'dark': '#264653',
-            'real_data': '#2E86AB',
-            'generated_data': '#A23B72',
-            'loss_curve': '#F18F01',
+            'real_data': '#4878CF',
+            'generated_data': '#B47CC7',
+            'loss_curve': '#55A868',
             'true_contour': 'black',
-        }
+        }        
         self.setup_style()
     
     def setup_style(self):
         """Apply the consistent plotting style using matplotlib rcParams."""
         plt.style.use('seaborn-v0_8-muted')
+        #colors_for_cycle = [color for name, color in self.colors.items() if name != 'true_contour']
+
+        # Option 2: Manual list
+        colors_for_cycle = ['#001C7F',
+                             '#7600A1',
+                             '#009E73',
+                             '#8172B2',
+                             '#017517',
+                             '#006374',
+                             '#7A68A6',
+                             '#467821',
+                             '#0072B2',
+                             '#B47CC7',
+                             '#6A994E',
+                             '#2E86AB',
+                             '#CC79A7',
+                             '#55A868',
+                            ]
 
         # Update rcParams
         plt.rcParams.update({
@@ -54,7 +86,10 @@ class _PlotConfig:
             'axes.spines.right': False,
             'axes.grid': True,
             'grid.alpha': 0.3,
-            'axes.prop_cycle': cycler('color', list(self.colors.values())), 
+            #'axes.prop_cycle': cycler('color', list(self.colors.values())), 
+            # --- Use the sptecial list ---
+            'axes.prop_cycle': cycler('color', colors_for_cycle),
+            # ---
             # --- Set the DEFAULT colormap ---
             'image.cmap': 'coolwarm',
         })
@@ -71,7 +106,6 @@ def get_default_figsize():
     """Returns the configured default figure size."""
     return tuple(_config.setup_style().get('figure.figsize', (12, 8)))
 
-# Plot real data
 def plot_real_data(x_real, title="Two-Moons Dataset (Normalized)", save_path=None):
     plt.figure(figsize=(6,6))
     plt.scatter(x_real[:, 0], x_real[:, 1], s=10, c=_config.colors['real_data'], alpha=0.6, linewidth=0)
@@ -85,6 +119,23 @@ def plot_real_data(x_real, title="Two-Moons Dataset (Normalized)", save_path=Non
     plt.tight_layout()
     if save_path: 
         plt.savefig(save_path, dpi=120, bbox_inches='tight')
+    plt.show()
+
+def plot_real_vs_generated(real_data, gen_data, distr_title, real_title, gen_title):
+    # Create figure and axes objects
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+    # Add the main title for the entire figure
+    fig.suptitle(distr_title, fontsize=16)
+
+    # Plot on specific axes
+    ax1.scatter(real_data[:,0], real_data[:,1], s=5, c=_config.colors['real_data'], alpha=0.5)
+    ax1.set_title(real_title)
+
+    ax2.scatter(gen_data[:,0], gen_data[:,1], s=5, c=_config.colors['generated_data'], alpha=0.5)
+    ax2.set_title(gen_title)
+
+    fig.tight_layout(rect=[0, 0, 1, 0.95]) # Leave space at the top
     plt.show()
 
 def plot_true_contour_and_samples(true_samples, sampler_samples_dict, name=''):

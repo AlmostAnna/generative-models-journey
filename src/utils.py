@@ -23,21 +23,6 @@ def get_data(n_samples=1024, normalize=True):
     
     return x
 
-# Plot real data
-def plot_real_data(x_real, title="Two-Moons Dataset (Normalized)", save_path=None):
-    plt.figure(figsize=(6,6))
-    plt.scatter(x_real[:, 0], x_real[:, 1], s=10, c='black', alpha=0.6, linewidth=0)
-    plt.title(title, fontsize=14)
-    plt.xlabel("$x_1$", fontsize=12)
-    plt.ylabel("$x_2$", fontsize=12)
-    plt.xlim(-3, 3)
-    plt.ylim(-3, 3)
-    plt.grid(True, alpha=0.3)
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.tight_layout()
-    if save_path: 
-        plt.savefig(save_path, dpi=120, bbox_inches='tight')
-    plt.show()
 
 def save_training_gif(location, giffile="diffusion_training.gif"):
     # Find all saved images
@@ -52,6 +37,6 @@ def save_training_gif(location, giffile="diffusion_training.gif"):
 #            for filename in png_files:
 #                image = imageio.v2.imread(filename)
 #                writer.append_data(image)
-        print("✅ Training animation saved: diffusion_training.gif")
+        print(f"Training animation saved: {giffile}")
     else:
         print("No images found. Did you run training?")

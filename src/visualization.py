@@ -121,7 +121,7 @@ def plot_real_data(x_real, title="Two-Moons Dataset (Normalized)", save_path=Non
         plt.savefig(save_path, dpi=120, bbox_inches='tight')
     plt.show()
 
-def plot_real_vs_generated(real_data, gen_data, distr_title, real_title, gen_title):
+def plot_real_and_generated(real_data, gen_data, distr_title, real_title, gen_title):
     # Create figure and axes objects
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 

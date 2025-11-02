@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 def generate_trending(T=16):
     trend = np.linspace(0, 1, T) * 0.5
@@ -24,7 +25,7 @@ def generate_spike(T=16):
     x3 = np.random.exponential(1, T)
     return np.stack([x1, x2, x3], axis=-1)
 
-def generate_dataset(n_per_class = 3000):
+def generate_dataset(n_per_class, T, D):
     # Generate dataset
     data = []
     labels = []
@@ -38,8 +39,13 @@ def generate_dataset(n_per_class = 3000):
 
     data = np.array(data, dtype=np.float32) # Shape: [9000, 16, 3]
     labels = np.array(labels)
+    
+    # Normalize
+    N = data.shape[0]
+    scaler = StandardScaler()
+    data = scaler.fit_transform(data.reshape(N, -1)).reshape(N, T, D).astype(np.float32)
 
-    return {
-        'data': data,
-        'labels': labels,
-    } 
+    # Clip extremes
+    X = np.clip(data, -5.0, 5.0).astype(np.float32)
+    
+    return X, labels, scaler

@@ -5,15 +5,11 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 
-# Access local project code
-from models.transformer import TimeSeriesTransformer
+import matplotlib.pyplot as plt
 
-
-def sample_sequence(model, n_tokens=4, temperature=1.0):
+def sample_sequence(model, n_tokens=4, temperature=1.0, device="cpu"):
     model.eval()
     with torch.no_grad():
-        device = next(model.parameters()).device
-        
         # Sample first token uniformly
         probs = torch.ones(model.n_codes, device=device)  # uniform probabilities
         first_token = torch.multinomial(probs, 1).unsqueeze(0)  # [1, 1]
@@ -38,4 +34,32 @@ def sample_sequence(model, n_tokens=4, temperature=1.0):
             seq = torch.cat([seq, next_token], dim=1)
         
         return seq.squeeze(0)  # [n_tokens]
+
+# Decode tokens back to time series
+def tokens_to_time_series(tokens, vqvae):
+    with torch.no_grad():
+        # tokens: [4] → [1, 4]
+        z_q = vqvae.vq_layer.codebook(tokens.unsqueeze(0))  # [1, 4, 16]
+        recon = vqvae.decode(z_q)  # [1, 16, 3]
+        return recon.squeeze(0).numpy()
+
+def sample_and_decode(vqvae, transformer, scaler, n_samples=10, n_tokens=4, device="cpu", save_path="generated.png"):
+    vqvae.eval(); transformer.eval()
+    plt.figure(figsize=(12, 2*n_samples))
+    
+    for i in range(n_samples):
+        tokens = sample_sequence(transformer, n_tokens, temperature=1.0, device=device)
+        with torch.no_grad():
+            z_q = vqvae.vq_layer.codebook(tokens.unsqueeze(0).to(device))
+            recon = vqvae.decode(z_q).cpu().numpy()[0]
+        
+        recon_orig = scaler.inverse_transform(recon.reshape(1, -1)).reshape(-1, 3) #16, 3/-1, 3
+        plt.subplot(n_samples, 1, i+1)
+        plt.plot(recon_orig[:, 0], 'o-')
+        plt.title(f"Sample {i+1} | Tokens: {tokens.cpu().tolist()}")
+        plt.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
         

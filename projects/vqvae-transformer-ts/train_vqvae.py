@@ -11,8 +11,8 @@ import torch.nn.functional as F
 # Access local project code
 from models.vqvae import VQVAETimeSeries
 
-def train_model(
-    training_data,
+def train_vqvae(
+    X,
     n_codes=64,
     code_dim=16,
     n_tokens=4,
@@ -22,17 +22,14 @@ def train_model(
     beta = 0.01,
     device='cpu',
     checkpoint_interval=10,
-    debug=False,
     pth_path="vqvae.pth" 
 ):
     """
     Train the vqvae model.
     """
-    # Create Data Tensor
-    X = torch.tensor(training_data, dtype=torch.float32)
-
+    
     # Initialize model
-    model = VQVAETimeSeries(n_codes=n_codes, code_dim=code_dim, n_tokens=n_tokens)
+    model = VQVAETimeSeries(n_codes=n_codes, code_dim=code_dim, n_tokens=n_tokens).to(device)
 
     # Initialize optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)

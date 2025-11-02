@@ -11,20 +11,18 @@ import torch.nn.functional as F
 # Access local project code
 from models.transformer import TimeSeriesTransformer
 
-def train_model(
+def train_transformer(
     token_dataset,
     n_codes=64,
     n_tokens=4,
     d_model=32,
     n_heads=2,
-    n_layers=2
+    n_layers=2,
     n_epochs=50,
     batch_size=128,
     learning_rate=3e-4,
-    beta = 0.01,
     device='cpu',
     checkpoint_interval=10,
-    debug=False,
     pth_path="transformer.pth" 
 ):
     """

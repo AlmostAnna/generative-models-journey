@@ -1,5 +1,7 @@
 import glob  
 import os
+import sys
+from pathlib import Path
 import torch
 import matplotlib.pyplot as plt
 from sklearn.datasets import make_moons
@@ -22,6 +24,16 @@ def get_data(n_samples=1024, normalize=True):
         x = (x - x.mean(dim=0)) / x.std(dim=0)
     
     return x
+
+
+def find_project_root(marker_files=['README.md', 'requirements.txt', '.git']):
+    """Find project root by looking for common marker files/directories"""
+    current_path = Path.cwd()
+    for parent in [current_path] + list(current_path.parents):
+        if any((parent / marker).exists() for marker in marker_files):
+            return parent
+    return current_path  # fallback to current directory
+
 
 
 def save_training_gif(location, giffile="diffusion_training.gif"):

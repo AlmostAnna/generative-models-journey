@@ -10,7 +10,7 @@ setup_environment()
 
 # Convenience imports
 try:
-    from .utils import get_data
+    from .utils import get_data, find_project_root
     from .diffusion import get_alpha_bar, positional_encoding, ScoreModel, ddim_sample
     from .ebm import annealed_langevin_sampler, EnergyModel, TGMixtureEnergy, sample_two_mixture
     from .mcmc import two_moons_logp_circular, grad_logp_circular, two_moons_model, banana_logp, banana_grad_logp, banana_model, generate_true_banana_samples, run_smc, run_mala, run_hmc_adaptive, run_nuts, compute_validation_metrics, run_experiment
@@ -23,6 +23,7 @@ except ImportError as e:
 
 __all__ = [
     'get_data',
+    'find_project_root',
     'plot_real_data',
     'get_alpha_bar',
     'positional_encoding',

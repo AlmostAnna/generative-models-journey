@@ -4,12 +4,15 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
+from src.plot_style import colors
+
 from data.generate_synthetic import generate_dataset
 from models.vqvae import VQVAETimeSeries
 from models.transformer import TimeSeriesTransformer
 from train_vqvae import train_vqvae
 from train_transformer import train_transformer
 from sample import sample_and_decode
+
 
 def main(args):
     # Reproducibility

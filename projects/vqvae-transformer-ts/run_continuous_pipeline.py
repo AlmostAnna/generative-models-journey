@@ -78,7 +78,7 @@ def main(args):
     
     for _ in range(10):
         sample_flat = sample_continuous(
-            model,
+            model_for_sampling,
             first_vals, 
             seq_len=args.seq_len * args.n_channels,
             temperature=1.0,  # noise for diversity

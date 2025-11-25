@@ -14,6 +14,8 @@ from models.transformer import TimeSeriesTransformer
 from models.continuous_transformer import ContinuousTimeSeriesTransformer
 
 from utils.generation import sample_sequence, tokens_to_time_series, sample_continuous
+from utils.evaluation import diversity_score, fid_score
+from utils.evaluation import extract_features_from_flat, train_regime_classifier_from_flat, regime_accuracy_from_flat
 
 
 def generate_vqvae_samples(n_samples, device):
@@ -68,45 +70,6 @@ def samples_to_flat_array(samples, is_vqvae=False):
         # Each sample is [48]
         return np.array(samples)
 
-def diversity_score(samples_array):
-    distances = pairwise_distances(samples_array, metric='euclidean')
-    return np.mean(distances)  # higher = more diverse
-
-
-def fid_score(real_samples_array, gen_samples_array, eps=1e-6):
-    # Compute means
-    mu1 = np.mean(real_samples_array, axis=0)
-    mu2 = np.mean(gen_samples_array, axis=0)
-    ssdiff = np.sum((mu1 - mu2) ** 2)
-
-    # Compute covariances
-    sigma1 = np.cov(real_samples_array, rowvar=False)
-    sigma2 = np.cov(gen_samples_array, rowvar=False)
-
-    # Add regularization to diagonals (prevents singularity)
-    sigma1 += np.eye(sigma1.shape[0]) * eps
-    sigma2 += np.eye(sigma2.shape[0]) * eps
-
-    # Compute sqrtm with error handling
-    try:
-        covmean = sqrtm(sigma1 @ sigma2)
-        if np.iscomplexobj(covmean):
-            covmean = covmean.real
-        # Ensure covmean is finite
-        if not np.isfinite(covmean).all():
-            print("Warning: covmean contains non-finite values. Using fallback.")
-            covmean = np.zeros_like(covmean)
-    except Exception as e:
-        print(f"sqrtm failed: {e}. Using fallback.")
-        covmean = np.zeros_like(sigma1)
-
-    fid = ssdiff + np.trace(sigma1 + sigma2 - 2 * covmean)
-    return fid
-
-
-
-def autocorr(x, lag=1):
-    return np.corrcoef(x[:-lag], x[lag:])[0, 1]
 
 def main(args):
     device = torch.device("cpu")  # CPU-only
@@ -135,9 +98,17 @@ def main(args):
  
     vqvae_array = samples_to_flat_array(vqvae_samples, is_vqvae=True)
     cont_array = samples_to_flat_array(cont_samples, is_vqvae=False)
+    X_real_np = X_flat[:n_samples].cpu().numpy()
+    X_full_np = X_flat.cpu().numpy()
 
     # Compute metrics
     print("3. Computing metrics...")
+
+    print("Regime Distribution Match (VQ-VAE):", 
+      regime_accuracy_from_flat(vqvae_array, X_full_np, labels_real))
+    print("Regime Distribution Match (Continuous):", 
+      regime_accuracy_from_flat(cont_array, X_full_np, labels_real))
+    
     print("Diversity (VQ-VAE):", diversity_score(vqvae_array))
     print("Diversity (Continuous):", diversity_score(cont_array))
     real_div = diversity_score(X_flat[:n_samples].cpu().numpy())  # compare same N
@@ -156,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("--d_model", type=int, default=32)
     parser.add_argument("--n_heads", type=int, default=2)
     parser.add_argument("--n_layers", type=int, default=2)
-    parser.add_argument("--n_samples", type=int, default=1000)
+    parser.add_argument("--n_samples", type=int, default=3000)
     
     args = parser.parse_args()
     main(args)

@@ -44,12 +44,13 @@ This represents a natural progression: from **2D distributions** to **structured
 ---
 
 ## Project Organization
+```text
 generative-models-journey/ 
-├── notebooks/ # Part 1: Two-moons foundational work 
-├── projects/ # Part 2: Sequential data extensions
-│ └── vqvae-transformer-ts/ # Transformer-based time series generation 
-└── README.md # This file
-
+|--- notebooks/ # Part 1: Two-moons foundational work 
+|--- projects/ # Part 2: Sequential data extensions
+|    |--- vqvae-transformer-ts/ # Transformer-based time series generation 
+|---README.md # This file
+```
 
 Each project maintains the same philosophy: **understanding through implementation**, with careful attention to **what works, what doesn't, and why**.
 

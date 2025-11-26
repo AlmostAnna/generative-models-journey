@@ -1,7 +1,6 @@
 # Time Series Generation: Discrete vs Continuous Transformers
 
-![VQ-VAE Sample](./plots/generated_samples.png)
-![Continuous Sample](./plots/generated_samples_continuous.png)
+![Model Comparison](./plots/comparison_preview.png)
 
 We compare two modern generative approaches for time series:
 - **Discrete**: VQ-VAE + Transformer (tokenized)

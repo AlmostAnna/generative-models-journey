@@ -3,19 +3,6 @@ from cycler import cycler
 
 class PlotConfig:
     def __init__(self):
-#        self.colors = {
-#            'primary': '#2E86AB',
-#            'secondary': '#A23B72',
-#            'accent1': '#F18F01',
-#            'accent2': '#C73E1D',
-#            'neutral': '#6A994E',
-#            'light': '#E9EDC9',
-#            'dark': '#264653',
-#            'real_data': '#2E86AB',
-#            'generated_data': '#A23B72',
-#            'loss_curve': '#F18F01',
-#            'true_contour': 'black',
-#        }
 
         self.colors = {
             'primary': '#4878CF',
@@ -35,9 +22,7 @@ class PlotConfig:
     def setup_style(self):
         """Apply the consistent plotting style using matplotlib rcParams."""
         plt.style.use('seaborn-v0_8-muted')
-        #colors_for_cycle = [color for name, color in self.colors.items() if name != 'true_contour']
 
-        # Option 2: Manual list
         colors_for_cycle = ['#001C7F',
                              '#7600A1',
                              '#009E73',
@@ -70,8 +55,7 @@ class PlotConfig:
             'axes.spines.right': False,
             'axes.grid': True,
             'grid.alpha': 0.3,
-            #'axes.prop_cycle': cycler('color', list(self.colors.values())), 
-            # --- Use the sptecial list ---
+            # --- Use the special list ---
             'axes.prop_cycle': cycler('color', colors_for_cycle),
             # ---
             # --- Set the DEFAULT colormap ---

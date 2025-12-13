@@ -3,26 +3,118 @@ requires = ["setuptools >= 64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "generative-journey"
+name = "generative-models-journey"
 version = "0.1.0"
 description = "Generative models exploration"
 readme = "README.md"
 requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "AlmostAnna"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache-2 License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
-    "torch",
-    "scikit-learn",
-    "matplotlib",
-    "tqdm",
-#    "imageio",
+    "torch>=1.9.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.4.0",
+    "tqdm>=4.60.0",
+    "numpy>=1.21.0",  # Add explicitly since torch might not bring latest
+    # "imageio>=2.9.0",  # Uncomment if needed for GIF creation
 ]
 
 [project.optional-dependencies]
 dev = [
-    "jupyterlab",
-    "ipykernel",
+    "jupyterlab>=3.0.0",
+    "ipykernel>=6.0.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "pre-commit>=2.15.0",
+    "nbconvert>=7.0.0",
+    "pylint>=2.12.0",
 ]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=2.5.0",  # For parallel testing
+]
+notebook = [
+    "jupyterlab>=3.0.0",
+    "ipykernel>=6.0.0",
+    "nbconvert>=7.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/AlmostAnna/generative-models-journey"
+Repository = "https://github.com/AlmostAnna/generative-models-journey.git"
+Issues = "https://github.com/AlmostAnna/generative-models-journey/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "projects*"]
 
+[tool.setuptools.package-dir]
+"" = "."  # This ensures both src and projects are included
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests", "projects/*/tests"]  # Include project tests too!
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",  # Common in ML libraries
+]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "--doctest-modules",
+    "--cov=src",
+    "--cov=projects",  # Also cover projects
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",  # For CI/CD
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | projects/vqvae-transformer-ts/__pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88  # Should match black's line_length
+
+[tool.flake8]
+max-line-length = 88
+select = ["C", "E", "F", "W", "B", "B950"]  # Enable B950 for line length warnings
+ignore = ["E203", "E501", "W503"]  # Line length handled by black
+extend-ignore = ["E203", "W503"]

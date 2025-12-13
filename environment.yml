@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.10
   - pip
+  - pytorch
   - jupyterlab
   - ipykernel
   - matplotlib
@@ -14,11 +15,14 @@ dependencies:
   - scipy
   - pyro-ppl
   - pip:
-    - torch
+#    - torch
     - scikit-learn
     - imageio
+    - pytest
+    - pytest-cov
+    - pre-commit
+    - -e .          # install src package in editable mode
 
 # Set environment variables
 variables:
   KMP_DUPLICATE_LIB_OK: TRUE
-

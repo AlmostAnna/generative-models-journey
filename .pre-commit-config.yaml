@@ -1,0 +1,48 @@
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml  # Added for pyproject.toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']  # Default is 500kB
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        language_version: python3.10
+        # Optionally specify files to target
+        types: [python]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (python)
+        # Target both src and project directories
+        types: [python]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-docstrings]
+        types: [python]
+
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest
+        entry: bash -c 'python -m pytest tests/ projects/*/tests/ -v --no-header -ra'  # Updated to run tests from both locations
+        language: system
+        pass_filenames: false
+        always_run: true
+        # Only run if Python files have changed
+        files: \.(py|ipynb)$

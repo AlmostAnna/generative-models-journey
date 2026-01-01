@@ -1,15 +1,13 @@
-import sys
-from pathlib import Path
+"""
+Training VQ-VAE tokenizer.
+
+This module contains implementation of VQ-VAE model training.
+"""
 
 import torch
-import torch.optim as optim
-import torch.nn as nn
-
-import numpy as np
 import torch.nn.functional as F
-
-# Access local project code
 from models.vqvae import VQVAETimeSeries
+
 
 def train_vqvae(
     X,
@@ -19,21 +17,20 @@ def train_vqvae(
     n_epochs=50,
     batch_size=64,
     learning_rate=1e-3,
-    beta = 0.01,
-    device='cpu',
+    beta=0.01,
+    device="cpu",
     checkpoint_interval=10,
-    pth_path="vqvae.pth" 
+    pth_path="vqvae.pth",
 ):
-    """
-    Train the vqvae model.
-    """
-    
+    """Train the vqvae model."""
     # Initialize model
-    model = VQVAETimeSeries(n_codes=n_codes, code_dim=code_dim, n_tokens=n_tokens).to(device)
+    model = VQVAETimeSeries(n_codes=n_codes, code_dim=code_dim, n_tokens=n_tokens).to(
+        device
+    )
 
     # Initialize optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    
+
     print(f"Starting training on {device}...")
     print(f"Epochs: {n_epochs}, Batch size: {batch_size}")
 
@@ -42,37 +39,34 @@ def train_vqvae(
         epoch_loss = 0.0
 
         for i in range(0, X.size(0), batch_size):
-            batch = X[idx[i:i+batch_size]]
-        
+            batch = X[idx[i : i + batch_size]]
+
             recon, z_q, indices = model(batch)
             z_e = model.encode(batch)  # Need z_e for losses
-        
+
             recon_loss = F.mse_loss(recon, batch)
-            codebook_loss = F.mse_loss(z_q, z_e.detach())        # update codebook
-            commit_loss = F.mse_loss(z_e, z_q.detach())          # update encoder
+            codebook_loss = F.mse_loss(z_q, z_e.detach())  # update codebook
+            commit_loss = F.mse_loss(z_e, z_q.detach())  # update encoder
             # After computing losses
             if epoch < 5:
-            # Warm-up: no commitment loss for first 5 epochs
+                # Warm-up: no commitment loss for first 5 epochs
                 loss = recon_loss + codebook_loss
             else:
                 loss = recon_loss + codebook_loss + beta * commit_loss
 
-        
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
             epoch_loss += loss.item()
-        
+
         if epoch % checkpoint_interval == 0:
             print(f"Epoch {epoch}, Loss: {epoch_loss:.4f}")
-            
+
     print("Training complete!")
     # Save the result
-    if(pth_path):
+    if pth_path:
         torch.save(model.state_dict(), pth_path)
         print(f"VQ-VAE model saved to {pth_path}")
-    return model, {
-        'final_loss': loss.item()
-    }
+    return model, {"final_loss": loss.item()}

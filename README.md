@@ -9,9 +9,9 @@ This repository documents my **hands-on exploration** of generative modeling acr
 All foundational experiments use the **two-moons dataset**, a simple 2D benchmark that reveals deep truths about sampling, optimization, and structure.
 
 We follow a clear arc:
-1. **MCMC** (MALA, HMC): Sampling from a known distribution  
-2. **Energy-Based Models (EBM)**: Learning a distribution, but struggling to sample  
-3. **Diffusion Models**: Learning to *reconstruct* data by reversing noise  
+1. **MCMC** (MALA, HMC): Sampling from a known distribution
+2. **Energy-Based Models (EBM)**: Learning a distribution, but struggling to sample
+3. **Diffusion Models**: Learning to *reconstruct* data by reversing noise
 
 **Goal**: Not just to implement models — but to understand *why* some succeed where others fail.
 
@@ -20,12 +20,12 @@ We follow a clear arc:
 
 ### [EBM: The Struggle to Learn the Two Moons](notebooks/ebm-story.ipynb)
 - Trains an Energy-Based Model with Langevin and Contrastive Divergence
-- Demonstrates poor mixing and mode collapse  
+- Demonstrates poor mixing and mode collapse
 - Asks: *"Why is sampling so hard?"*
 
 ### [Diffusion: From Noise to Structure](notebooks/diffusion-story.ipynb)
 - Trains a score-based diffusion model with DDIM sampling
-- Shows how samples emerge from noise, step by step  
+- Shows how samples emerge from noise, step by step
 - Explains why diffusion avoids the pitfalls of EBM
 
 ---
@@ -45,10 +45,10 @@ This represents a natural progression: from **2D distributions** to **structured
 
 ## Project Organization
 ```text
-generative-models-journey/ 
-|--- notebooks/ # Part 1: Two-moons foundational work 
+generative-models-journey/
+|--- notebooks/ # Part 1: Two-moons foundational work
 |--- projects/ # Part 2: Sequential data extensions
-|    |--- vqvae-transformer-ts/ # Transformer-based time series generation 
+|    |--- vqvae-transformer-ts/ # Transformer-based time series generation
 |---README.md # This file
 ```
 
@@ -57,5 +57,3 @@ Each project maintains the same philosophy: **understanding through implementati
 ---
 
 *This repository reflects my belief that generative modeling is not just about building bigger models — but about understanding the fundamental tradeoffs between different approaches to learning and sampling from complex distributions.*
-
-

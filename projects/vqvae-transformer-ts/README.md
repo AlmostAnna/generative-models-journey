@@ -24,9 +24,8 @@ We compare two modern generative approaches for time series:
 # Train VQ-VAE + Transformer
 python run_pipeline.py
 
-# Train Continuous Transformer  
+# Train Continuous Transformer
 python run_continuous_pipeline.py
 
 # Compare results
 python compare_models.py
-

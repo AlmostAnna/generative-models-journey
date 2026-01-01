@@ -1,52 +1,54 @@
-import os
+"""
+Training and evaluating VQ-VAE Transformer.
+
+This module contains implementation of VQ-VAE-TS model pipeline.
+"""
+
 import argparse
-import torch
+import os
+
 import numpy as np
-import matplotlib.pyplot as plt
-
-from src.plot_style import colors
-
+import torch
 from data.generate_synthetic import generate_dataset
-from models.vqvae import VQVAETimeSeries
-from models.transformer import TimeSeriesTransformer
-from train_vqvae import train_vqvae
-from train_transformer import train_transformer
 from sample import sample_and_decode
+from train_transformer import train_transformer
+from train_vqvae import train_vqvae
+
+from utils.plotting import plot_vqvae_ts_samples
 
 
 def main(args):
+    """Run VQ-VAE Transformer pipeline."""
     # Reproducibility
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # === Step 1: Generate Data ===
     print("1. Generating synthetic data...")
     X, labels, scaler = generate_dataset(
-        n_per_class=args.n_per_class,
-        T=args.seq_len,
-        D=args.n_channels
+        n_per_class=args.n_per_class, T=args.seq_len, D=args.n_channels
     )
     X = torch.tensor(X, dtype=torch.float32).to(device)
-    
+
     # === Step 2: Train VQ-VAE ===
     print("2. Training VQ-VAE...")
     vqvae, history = train_vqvae(
-    X,
-    n_codes=args.n_codes,
-    code_dim=args.code_dim,
-    n_tokens=args.n_tokens,    
-    n_epochs=args.vqvae_epochs,
-    batch_size=args.vqvae_batch_size,
-    learning_rate=args.vqvae_lr,
-    beta=args.beta,
-    device=device,
-    checkpoint_interval=10,
-    pth_path="vqvae.pth"
+        X,
+        n_codes=args.n_codes,
+        code_dim=args.code_dim,
+        n_tokens=args.n_tokens,
+        n_epochs=args.vqvae_epochs,
+        batch_size=args.vqvae_batch_size,
+        learning_rate=args.vqvae_lr,
+        beta=args.beta,
+        device=device,
+        checkpoint_interval=10,
+        pth_path="vqvae.pth",
     )
-    
+
     # === Step 3: Extract Tokens ===
     print("3. Extracting tokens...")
     with torch.no_grad():
@@ -67,25 +69,38 @@ def main(args):
         learning_rate=args.trans_lr,
         device=device,
         checkpoint_interval=10,
-        pth_path="transformer.pth" 
+        pth_path="transformer.pth",
     )
-    
-    # === Step 5: Generate & Plot ===
+
+    # === Step 5: Generate ===
     print("5. Generating new time series...")
-    os.makedirs("plots", exist_ok=True)
-    sample_and_decode(
-        vqvae, transformer, scaler, 
-        n_samples=10, 
+    recon_s, tokens = sample_and_decode(
+        vqvae,
+        transformer,
+        scaler,
+        n_samples=10,
         n_tokens=args.n_tokens,
         device=device,
-        save_path="plots/generated_samples.png"
     )
-    
-    print("Pipeline complete! Generated samples saved to plots/generated_samples.png")
+
+    # === Step 6: Plot ===
+    os.makedirs("plots", exist_ok=True)
+    plot_vqvae_ts_samples(
+        recon_s,
+        tokens,
+        n_samples=10,
+        save_path="plots/generated_vqvae_ts_samples.png",
+    )
+
+    print(
+        "Pipeline complete! Generated samples saved to plots/generated_vqvae_ts_samples.png"  # noqa:E501
+    )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="VQ-VAE + Transformer for Time Series Generation")
+    parser = argparse.ArgumentParser(
+        description="VQ-VAE + Transformer for Time Series Generation"
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n_per_class", type=int, default=3000)
     parser.add_argument("--seq_len", type=int, default=16)
@@ -101,9 +116,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_heads", type=int, default=2)
     parser.add_argument("--n_layers", type=int, default=2)
     parser.add_argument("--trans_epochs", type=int, default=100)
-    parser.add_argument("--trans_batch_size", type=int, default=128)    
+    parser.add_argument("--trans_batch_size", type=int, default=128)
     parser.add_argument("--trans_lr", type=float, default=3e-4)
-    
+
     args = parser.parse_args()
     main(args)
-

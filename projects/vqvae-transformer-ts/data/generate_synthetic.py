@@ -1,23 +1,39 @@
+"""
+Training data simulator.
+
+This module contains code for generation of synthetic time series dataset
+combining 3 types of regimes:
+    'Trending' - slow linear drift + low noise,
+    'Mean-Reverting' - oscillation around zero,
+    'Volatile Spike' - mostly flat, then sudden spike in middle.
+"""
+
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+
 def generate_trending(T=16):
+    """Generate Trending type samples."""
     trend = np.linspace(0, 1, T) * 0.5
     noise = np.random.normal(0, 0.1, T)
-    x1 = trend + noise                    # price-like
+    x1 = trend + noise  # price-like
     x2 = 0.2 + np.random.normal(0, 0.05, T)  # vol
-    x3 = np.random.exponential(1, T)     # volume
+    x3 = np.random.exponential(1, T)  # volume
     return np.stack([x1, x2, x3], axis=-1)
 
+
 def generate_mean_reverting(T=16):
+    """Generate Mean-Reverting type samples."""
     x1 = np.zeros(T)
     for t in range(1, T):
-        x1[t] = x1[t-1] - 0.2 * x1[t-1] + np.random.normal(0, 0.1)
+        x1[t] = x1[t - 1] - 0.2 * x1[t - 1] + np.random.normal(0, 0.1)
     x2 = 0.2 + np.random.normal(0, 0.05, T)
     x3 = np.random.exponential(1, T)
     return np.stack([x1, x2, x3], axis=-1)
 
+
 def generate_spike(T=16):
+    """Generate Volatile Spike type samples."""
     x1 = np.random.normal(0, 0.1, T)
     spike_at = T // 2
     x1[spike_at] += np.random.choice([1.5, -1.5])  # random up/down spike
@@ -25,8 +41,9 @@ def generate_spike(T=16):
     x3 = np.random.exponential(1, T)
     return np.stack([x1, x2, x3], axis=-1)
 
+
 def generate_dataset(n_per_class, T, D):
-    # Generate dataset
+    """Generate normalized dataset of combined samples."""
     data = []
     labels = []
     types = [generate_trending, generate_mean_reverting, generate_spike]
@@ -37,9 +54,9 @@ def generate_dataset(n_per_class, T, D):
             data.append(seq)
             labels.append(cls_id)
 
-    data = np.array(data, dtype=np.float32) # Shape: [9000, 16, 3]
+    data = np.array(data, dtype=np.float32)  # Shape: [9000, 16, 3]
     labels = np.array(labels)
-    
+
     # Normalize
     N = data.shape[0]
     scaler = StandardScaler()
@@ -47,5 +64,5 @@ def generate_dataset(n_per_class, T, D):
 
     # Clip extremes
     X = np.clip(data, -5.0, 5.0).astype(np.float32)
-    
+
     return X, labels, scaler

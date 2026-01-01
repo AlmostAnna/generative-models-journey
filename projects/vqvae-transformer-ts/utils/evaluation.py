@@ -1,7 +1,14 @@
+"""
+Metrics for model evaluation.
+
+This module contains various metrics to access quality of samples
+created by the models in the project.
+"""
+
 import numpy as np
+from scipy.linalg import sqrtm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import pairwise_distances
-from scipy.linalg import sqrtm
 
 
 def extract_features_from_flat(flat_samples, T=16, D=3):
@@ -19,26 +26,32 @@ def extract_features_from_flat(flat_samples, T=16, D=3):
         sample_2d = flat_sample.reshape(T, D)  # [16, 3]
         x = sample_2d[:, 0]  # First channel (trend/spike)
 
-        features.append([
-            np.std(x),                          # volatility
-            np.max(x) - np.min(x),             # range
-            np.polyfit(np.arange(len(x)), x, 1)[0],  # trend slope
-            np.argmax(np.abs(x - np.mean(x))) if len(x) > 0 else 0,  # spike location
-            np.max(np.abs(x)),                 # max deviation
-        ])
+        features.append(
+            [
+                np.std(x),  # volatility
+                np.max(x) - np.min(x),  # range
+                np.polyfit(np.arange(len(x)), x, 1)[0],  # trend slope
+                (
+                    np.argmax(np.abs(x - np.mean(x))) if len(x) > 0 else 0
+                ),  # spike location
+                np.max(np.abs(x)),  # max deviation
+            ]
+        )
     return np.array(features)
 
+
 def train_regime_classifier_from_flat(flat_real_samples, real_labels, T=16, D=3):
-    """Train classifier on real data (flat format)"""
+    """Train classifier on real data (flat format)."""
     features = extract_features_from_flat(flat_real_samples, T, D)
     classifier = RandomForestClassifier(n_estimators=100, random_state=42)
     classifier.fit(features, real_labels)
     return classifier
 
-def regime_accuracy_from_flat(gen_flat_samples, real_flat_samples, real_labels, T=16, D=3):
-    """
-    Measure regime distribution match for flat-format samples.
-    """
+
+def regime_accuracy_from_flat(
+    gen_flat_samples, real_flat_samples, real_labels, T=16, D=3
+):
+    """Measure regime distribution match for flat-format samples."""
     # Train classifier on REAL data
     classifier = train_regime_classifier_from_flat(real_flat_samples, real_labels, T, D)
 
@@ -54,15 +67,19 @@ def regime_accuracy_from_flat(gen_flat_samples, real_flat_samples, real_labels, 
 
     # Use cosine similarity (higher = better match)
     from scipy.spatial.distance import cosine
+
     similarity = 1 - cosine(real_dist, gen_dist)
     return similarity
 
+
 def diversity_score(samples_array):
-    distances = pairwise_distances(samples_array, metric='euclidean')
-    return np.mean(distances)  # higher = more diverse
+    """Measure diversity score(higher = more diverse)."""
+    distances = pairwise_distances(samples_array, metric="euclidean")
+    return np.mean(distances)
 
 
 def fid_score(real_samples_array, gen_samples_array, eps=1e-6):
+    """Measure Frechet inception distance."""
     # Compute means
     mu1 = np.mean(real_samples_array, axis=0)
     mu2 = np.mean(gen_samples_array, axis=0)
@@ -91,29 +108,3 @@ def fid_score(real_samples_array, gen_samples_array, eps=1e-6):
 
     fid = ssdiff + np.trace(sigma1 + sigma2 - 2 * covmean)
     return fid
-
-def regime_accuracy(generated_samples, real_samples, real_labels):
-    """
-    Measure how well generated samples match real regime distribution
-    """
-    # Train classifier on REAL data
-    classifier = train_regime_classifier(real_samples, real_labels)
-    
-    # Extract features from GENERATED samples
-    gen_features = extract_features(generated_samples)
-    
-    # Predict regimes
-    pred_labels = classifier.predict(gen_features)
-    
-    # Since we don't have "true" labels for generated data,
-    # we check if the **distribution** of predicted regimes matches real data
-    real_dist = np.bincount(real_labels, minlength=3) / len(real_labels)
-    gen_dist = np.bincount(pred_labels, minlength=3) / len(pred_labels)
-    
-    # Return distribution similarity (higher = better)
-    # Option 1: Accuracy isn't directly applicable, so use KL divergence or cosine similarity
-    from scipy.spatial.distance import cosine
-    similarity = 1 - cosine(real_dist, gen_dist)
-    return similarity
-
-

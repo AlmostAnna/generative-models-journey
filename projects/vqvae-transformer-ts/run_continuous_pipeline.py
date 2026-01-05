@@ -7,6 +7,7 @@ This module contains implementation of continuous transformer pipeline.
 import argparse
 import os
 
+import joblib
 import numpy as np
 import torch
 from data.generate_synthetic import generate_dataset
@@ -37,6 +38,7 @@ def main(args):
 
     # === Step 2: Train Continuous Transformer ===
     print("2. Training Continuous Transformer (JiT-style)...")
+    os.makedirs("artifacts", exist_ok=True)
     model, history = train_continuous(
         X_flat,
         scaler=scaler,
@@ -49,9 +51,13 @@ def main(args):
         learning_rate=args.cont_lr,
         device=device,
         checkpoint_interval=10,
-        pth_path="continuous_transformer.pth",
+        pth_path="artifacts/continuous_transformer.pth",
         plot_recon=True,
     )
+
+    # Save the scaler that was fitted on the training data
+    joblib.dump(scaler, "artifacts/continuous_transformer_scaler.pkl")
+    print("Model and Scaler saved.")
 
     # Diagnostic: test model on a short sequence
     print("Testing model on short sequence...")
@@ -67,6 +73,10 @@ def main(args):
     print("3. Generating new time series (continuous)...")
     os.makedirs("plots", exist_ok=True)
 
+    # Load the scaler that was fitted during training and saved
+    scaler = joblib.load("artifacts/continuous_transformer_scaler.pkl")
+    print("Scaler loaded from 'artifacts/continuous_transformer_scaler.pkl'.")
+
     # For sampling, create a fresh model and load weights
     model_for_sampling = ContinuousTimeSeriesTransformer(
         seq_len=48,
@@ -75,7 +85,9 @@ def main(args):
         n_layers=args.n_layers,
         dropout=0.0,
     ).to(device)
-    model_for_sampling.load_state_dict(torch.load("continuous_transformer.pth"))
+    model_for_sampling.load_state_dict(
+        torch.load("artifacts/continuous_transformer.pth")
+    )
     model_for_sampling.eval()
 
     generated_samples = []

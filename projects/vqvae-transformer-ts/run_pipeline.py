@@ -7,6 +7,7 @@ This module contains implementation of VQ-VAE-TS model pipeline.
 import argparse
 import os
 
+import joblib
 import numpy as np
 import torch
 from data.generate_synthetic import generate_dataset
@@ -35,6 +36,7 @@ def main(args):
 
     # === Step 2: Train VQ-VAE ===
     print("2. Training VQ-VAE...")
+    os.makedirs("artifacts", exist_ok=True)
     vqvae, history = train_vqvae(
         X,
         n_codes=args.n_codes,
@@ -46,7 +48,7 @@ def main(args):
         beta=args.beta,
         device=device,
         checkpoint_interval=10,
-        pth_path="vqvae.pth",
+        pth_path="artifacts/vqvae.pth",
     )
 
     # === Step 3: Extract Tokens ===
@@ -69,11 +71,19 @@ def main(args):
         learning_rate=args.trans_lr,
         device=device,
         checkpoint_interval=10,
-        pth_path="transformer.pth",
+        pth_path="artifacts/transformer.pth",
     )
+
+    # Save the scaler that was fitted on the training data
+    joblib.dump(scaler, "artifacts/vqvae_scaler.pkl")
+    print("Models and Scaler saved.")
 
     # === Step 5: Generate ===
     print("5. Generating new time series...")
+    # Load the scaler that was fitted during training and saved
+    scaler = joblib.load("artifacts/vqvae_scaler.pkl")
+    print("Scaler loaded from 'artifacts/vqvae_scaler.pkl'.")
+
     recon_s, tokens = generate_vqvae_samples(
         vqvae,
         transformer,

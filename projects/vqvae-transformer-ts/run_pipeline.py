@@ -14,6 +14,7 @@ from data.generate_synthetic import generate_dataset
 from train_transformer import train_transformer
 from train_vqvae import train_vqvae
 
+from utils.data_processing import inverse_scale_samples
 from utils.generation import generate_vqvae_samples
 from utils.plotting import plot_vqvae_ts_samples
 
@@ -84,19 +85,23 @@ def main(args):
     scaler = joblib.load("artifacts/vqvae_scaler.pkl")
     print("Scaler loaded from 'artifacts/vqvae_scaler.pkl'.")
 
-    recon_s, tokens = generate_vqvae_samples(
+    scaled_s, tokens = generate_vqvae_samples(
         vqvae,
         transformer,
-        scaler,
         n_samples=10,
         n_tokens=args.n_tokens,
         device=device,
     )
 
+    # Inverse scale to original domain
+    original_scale_samples = inverse_scale_samples(
+        scaler, scaled_s
+    )  # Shape: (n_samples, T*D) or (n_samples, T, D)
+
     # === Step 6: Plot ===
     os.makedirs("plots", exist_ok=True)
     plot_vqvae_ts_samples(
-        recon_s,
+        original_scale_samples,
         tokens,
         n_samples=10,
         save_path="plots/generated_vqvae_ts_samples.png",

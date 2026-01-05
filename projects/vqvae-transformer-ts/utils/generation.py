@@ -41,6 +41,52 @@ def sample_continuous(model, first_vals, seq_len=48, temperature=0.1, device="cp
         return seq.squeeze(0).cpu()  # [L]
 
 
+def generate_continuous_samples(
+    model,  # The loaded model object
+    n_samples: int,
+    seq_len: int,  # T
+    n_channels: int,  # D
+    first_vals,
+    temperature: float = 1.0,
+    device: torch.device = torch.device("cpu"),
+) -> np.ndarray:  # Returns scaled samples
+    """
+    Generate time series samples using a pre-trained Continuous Transformer.
+
+    Args:
+        model: The pre-trained Continuous Transformer model.
+        n_samples: Number of samples to generate.
+        seq_len: Length of the sequence to generate.
+        n_channels: Number of channels.
+        first_vals: Initial values for the sequence.
+        temperature: Sampling temperature or noise level.
+        device: The device to run the model on.
+
+    Returns:
+        A numpy array containing the generated samples in the scaled domain
+        (shape (n_samples, seq_len, n_channels)).
+    """
+    model.eval()
+
+    scaled_samples = []  # Store scaled outputs
+
+    with torch.no_grad():
+        for _ in range(n_samples):
+            sample_flat_scaled = sample_continuous(
+                model,
+                first_vals,
+                seq_len=seq_len * n_channels,
+                temperature=temperature,
+                device=device,
+            )
+            scaled_samples.append(sample_flat_scaled)
+
+    all_samples_flat = np.stack(scaled_samples, axis=0)  # Shape: (n_samples, T*D)
+    all_samples_reshaped = all_samples_flat.reshape(n_samples, seq_len, n_channels)
+
+    return all_samples_reshaped  # Shape: (n_samples, T, D)
+
+
 def sample_sequence(transformer, n_tokens=4, temperature=1.0, device="cpu"):
     """Sample token sequence from discrete Transformer."""
     transformer.eval()
@@ -71,7 +117,6 @@ def tokens_to_time_series(tokens, vqvae, device="cpu"):
 def generate_vqvae_samples(
     vqvae,
     transformer,
-    scaler,  # Pass scaler if needed for inverse transform before return
     n_samples: int,
     n_tokens: int,
     temperature: float = 1.0,
@@ -83,21 +128,20 @@ def generate_vqvae_samples(
     Args:
         vqvae: The pre-trained VQ-VAE model.
         transformer: The pre-trained Transformer model.
-        scaler: The scaler used for inverse transform.
         n_samples: Number of samples to generate.
         n_tokens: Number of tokens per sample.
         temperature: Sampling temperature for the transformer.
         device: The device to run the models on.
 
     Returns:
-        A tuple containing the generated samples (e.g., shape (n_samples, T, D))
-        and the corresponding token sequences.
+        A numpy array containing the generated samples in the scaled domain
+        (e.g., shape (n_samples, T*D) or (n_samples, T, D) depending on VAE output).
     """
     vqvae.eval()
     transformer.eval()
 
-    reconstructions = []
-    token_sequences = []
+    scaled_reconstructions = []  # Store scaled outputs
+    token_sequences = []  # Store tokens
 
     with torch.no_grad():
         for _ in range(n_samples):
@@ -105,13 +149,10 @@ def generate_vqvae_samples(
                 transformer, n_tokens, temperature=temperature, device=device
             )
             z_q = vqvae.vq_layer.codebook(tokens.unsqueeze(0).to(device))
-            recon = vqvae.decode(z_q).cpu().numpy()[0]
-
-            # Inverse transform to original scale if needed before returning
-            recon_orig = scaler.inverse_transform(recon.reshape(1, -1)).reshape(
-                -1, 3
-            )  # Adjust shape as needed
-            reconstructions.append(recon_orig)
+            recon_scaled = (
+                vqvae.decode(z_q).cpu().numpy()[0]
+            )  # Get scaled output from VAE decoder
+            scaled_reconstructions.append(recon_scaled)
             token_sequences.append(tokens.cpu())
 
-    return np.stack(reconstructions, axis=0), token_sequences
+    return np.stack(scaled_reconstructions, axis=0), token_sequences

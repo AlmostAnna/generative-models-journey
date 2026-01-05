@@ -9,57 +9,12 @@ by models implemented in the project.
 import matplotlib.pyplot as plt
 import torch
 from data.generate_synthetic import generate_dataset
-from models.continuous_transformer import ContinuousTimeSeriesTransformer
-from models.transformer import TimeSeriesTransformer
-from models.vqvae import VQVAETimeSeries
 
 from src.plot_style import colors
-from utils.generation import sample_continuous, sample_sequence, tokens_to_time_series
-
-
-def generate_vqvae_samples(n_samples, device):
-    """Generate VQVAE Transformer samples."""
-    # === Load VQ-VAE + Transformer ===
-    vqvae = VQVAETimeSeries(n_codes=64, code_dim=16, n_tokens=4).to(device)
-    vqvae.load_state_dict(torch.load("vqvae.pth", map_location=device))
-    vqvae.eval()
-
-    transformer = TimeSeriesTransformer(n_codes=64, n_tokens=4).to(device)
-    transformer.load_state_dict(torch.load("transformer.pth", map_location=device))
-    transformer.eval()
-
-    # Generate VQ samples
-    vqvae_samples = []
-    for _ in range(n_samples):
-        tokens = sample_sequence(transformer, n_tokens=4, temperature=1.0)
-        ts = tokens_to_time_series(tokens, vqvae)
-        vqvae_samples.append(ts)
-    return vqvae_samples
-
-
-def generate_continuous_samples(
-    n_samples, seq_len, first_vals, d_model, n_heads, n_layers, dropout, device
-):
-    """Generate Continuous Transformer samples."""
-    model_for_sampling = ContinuousTimeSeriesTransformer(
-        seq_len, d_model, n_heads, n_layers, dropout=0.0
-    ).to(device)
-    model_for_sampling.load_state_dict(torch.load("continuous_transformer.pth"))
-    model_for_sampling.eval()
-
-    generated_samples = []
-    for _ in range(n_samples):
-        sample_flat = sample_continuous(
-            model_for_sampling,
-            first_vals,
-            seq_len,
-            temperature=1.0,  # noise for diversity
-            device=device,
-        )
-        ts_cont = sample_flat.numpy().reshape(16, 3)
-        generated_samples.append(ts_cont)
-
-    return generated_samples
+from utils.generation_pipeline import (
+    generate_continuous_samples_from_model,
+    generate_vqvae_samples_from_model,
+)
 
 
 def create_preview_plot():
@@ -83,8 +38,8 @@ def create_preview_plot():
 
     device = torch.device("cpu")
 
-    # Get scaler for inverse transform and first values for continuous generation
-    X_real, labels_real, scaler = generate_dataset(n_per_class=100, T=16, D=3)
+    # Get first values for continuous generation
+    X_real, labels_real, _ = generate_dataset(n_per_class=100, T=16, D=3)
     X_real = torch.tensor(X_real, dtype=torch.float32)  # Keep on CPU for now
     X_flat = X_real.reshape(X_real.size(0), -1)  # [N, 48]
     X_flat = X_flat.to(device)
@@ -93,17 +48,20 @@ def create_preview_plot():
 
     # Generate 3 samples from each model
     n_samples = 3
-    seq_length = 48
+    T = 16
+    D = 3
+    # seq_length = 48
     vqvae_samples = []
     cont_samples = []
 
     # Generate samples from both models
     print("Generating samples from the models...")
-    vqvae_samples = generate_vqvae_samples(n_samples, device=device)
+    vqvae_samples = generate_vqvae_samples_from_model(n_samples, device=device)
 
-    cont_samples = generate_continuous_samples(
+    cont_samples = generate_continuous_samples_from_model(
         n_samples,
-        seq_len=seq_length,
+        T,
+        D,
         first_vals=first_vals,
         d_model=32,
         n_heads=2,
@@ -115,9 +73,12 @@ def create_preview_plot():
     # Plot samples
     for i in range(n_samples):
         # VQ-VAE samples (top row)
-        vq_ts = scaler.inverse_transform(vqvae_samples[i].reshape(1, -1)).reshape(16, 3)
         axes[0, i].plot(
-            vq_ts[:, 0], "o-", color=colors["primary"], markersize=3, linewidth=1.5
+            vqvae_samples[i, :, 0],
+            "o-",
+            color=colors["primary"],
+            markersize=3,
+            linewidth=1.5,
         )
         axes[0, i].set_title(f"VQ-VAE Sample {i+1}", fontsize=9)
         axes[0, i].set_xticks([0, 8, 15])
@@ -125,11 +86,12 @@ def create_preview_plot():
         axes[0, i].grid(True, alpha=0.3, linewidth=0.5)
 
         # Continuous samples (bottom row)
-        cont_ts = scaler.inverse_transform(cont_samples[i].reshape(1, -1)).reshape(
-            16, 3
-        )
         axes[1, i].plot(
-            cont_ts[:, 0], "s-", color=colors["secondary"], markersize=3, linewidth=1.5
+            cont_samples[i, :, 0],
+            "s-",
+            color=colors["secondary"],
+            markersize=3,
+            linewidth=1.5,
         )
         axes[1, i].set_title(f"Continuous Sample {i+1}", fontsize=9)
         axes[1, i].set_xticks([0, 8, 15])

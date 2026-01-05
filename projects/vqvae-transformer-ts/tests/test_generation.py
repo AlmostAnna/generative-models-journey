@@ -102,7 +102,7 @@ def test_returns_correct_types_and_shapes(mock_models_and_scaler):
     n_tokens = 4
 
     samples, tokens_list = generate_vqvae_samples(
-        vqvae, transformer, scaler, n_samples, n_tokens, device=device
+        vqvae, transformer, n_samples, n_tokens, device=device
     )
 
     assert isinstance(
@@ -135,7 +135,7 @@ def test_returns_correct_number_of_samples(mock_models_and_scaler):
     n_tokens = 4
 
     samples, tokens_list = generate_vqvae_samples(
-        vqvae, transformer, scaler, n_samples, n_tokens, device=device
+        vqvae, transformer, n_samples, n_tokens, device=device
     )
 
     assert (
@@ -147,7 +147,7 @@ def test_returns_correct_number_of_samples(mock_models_and_scaler):
 
     n_samples = 10
     samples, tokens_list = generate_vqvae_samples(
-        vqvae, transformer, scaler, n_samples, n_tokens, device=device
+        vqvae, transformer, n_samples, n_tokens, device=device
     )
 
     assert (
@@ -171,7 +171,7 @@ def test_handles_different_n_tokens(mock_models_and_scaler):
         # The mock transformer's n_codes is used for the output shape of its __call__.
         mock_trans_for_case = MockTransformer(n_codes=64, n_tokens=n_tokens)
         samples, tokens_list = generate_vqvae_samples(
-            vqvae, mock_trans_for_case, scaler, n_samples, n_tokens, device=device
+            vqvae, mock_trans_for_case, n_samples, n_tokens, device=device
         )
         # Check shape based on n_tokens
         expected_samples_shape = (n_samples, n_tokens, 3)  # Adjust D if needed

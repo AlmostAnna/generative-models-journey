@@ -14,9 +14,9 @@ We compare two modern generative approaches for time series:
 
 | Metric | VQ-VAE + Transformer | Continuous Transformer |
 |--------|----------------------|------------------------|
-| Regime Distribution Match | 0.780 | **0.890** |
-| Diversity | 7.35 | **10.51** |
-| FID (lower = better) | 24.49 | **23.79** |
+| Regime Distribution Match | 0.848 | **0.945** |
+| Diversity | 3.916 | **5.901** |
+| FID (lower = better) | 3.021 | **1.863** |
 
 ## Try It Yourself
 

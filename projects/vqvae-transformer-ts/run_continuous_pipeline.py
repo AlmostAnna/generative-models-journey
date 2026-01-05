@@ -14,7 +14,8 @@ from data.generate_synthetic import generate_dataset
 from models.continuous_transformer import ContinuousTimeSeriesTransformer
 from train_continuous import train_continuous
 
-from utils.generation import sample_continuous
+from utils.data_processing import inverse_scale_samples
+from utils.generation import generate_continuous_samples
 from utils.plotting import plot_continuous_samples
 
 
@@ -79,7 +80,7 @@ def main(args):
 
     # For sampling, create a fresh model and load weights
     model_for_sampling = ContinuousTimeSeriesTransformer(
-        seq_len=48,
+        seq_len=args.seq_len * args.n_channels,
         d_model=args.d_model,
         n_heads=args.n_heads,
         n_layers=args.n_layers,
@@ -90,25 +91,32 @@ def main(args):
     )
     model_for_sampling.eval()
 
-    generated_samples = []
     first_vals = X_flat[:, 0].cpu().numpy()  # [N,] — first value of each sequence
 
-    for _ in range(10):
-        sample_flat = sample_continuous(
-            model_for_sampling,
-            first_vals,
-            seq_len=args.seq_len * args.n_channels,
-            temperature=1.0,  # noise for diversity
-            device=device,
-        )
-        generated_samples.append(sample_flat)
+    scaled_samples = generate_continuous_samples(
+        model_for_sampling,
+        n_samples=10,
+        seq_len=args.seq_len,
+        n_channels=args.n_channels,
+        first_vals=first_vals,
+        temperature=1.0,  # noise for diversity
+        device=device,
+    )
+
+    # Inverse scale to original domain
+    original_scale_samples = inverse_scale_samples(
+        scaler, scaled_samples
+    )  # Shape: (n_samples, T*D) or (n_samples, T, D)
+
     # Plot
     plot_continuous_samples(
-        generated_samples, scaler, "plots/generated_samples_continuous.png"
+        original_scale_samples,
+        n_samples=10,
+        save_path="plots/generated_continuous_samples.png",
     )
 
     print(
-        "Continuous pipeline complete! Samples saved to plots/generated_samples_continuous.png"  # noqa:E501
+        "Continuous pipeline complete! Samples saved to plots/generated_continuous_samples.png"  # noqa:E501
     )
 
 

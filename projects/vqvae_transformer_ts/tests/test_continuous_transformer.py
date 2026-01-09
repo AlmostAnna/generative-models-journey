@@ -6,7 +6,8 @@ Continuous Transformer implementation.
 """
 
 import torch
-from models.continuous_transformer import ContinuousTimeSeriesTransformer
+
+from ..models.continuous_transformer import ContinuousTimeSeriesTransformer
 
 
 def test_init_default_params():

@@ -8,10 +8,11 @@ by models implemented in the project.
 
 import matplotlib.pyplot as plt
 import torch
-from data.generate_synthetic import generate_dataset
 
 from src.plot_style import colors
-from utils.generation_pipeline import (
+
+from .data.generate_synthetic import generate_dataset
+from .utils.generation_pipeline import (
     generate_continuous_samples_from_model,
     generate_vqvae_samples_from_model,
 )

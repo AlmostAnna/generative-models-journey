@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import torch
 
-from utils.generation import generate_vqvae_samples
+from ..utils.generation import generate_vqvae_samples
 
 
 # --- Mock Model Components for Testing ---

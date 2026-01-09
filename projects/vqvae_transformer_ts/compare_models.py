@@ -12,9 +12,9 @@ import numpy as np
 import torch
 from data.generate_synthetic import generate_dataset
 
-from utils.data_processing import inverse_scale_samples
-from utils.evaluation import diversity_score, fid_score, regime_accuracy_from_flat
-from utils.generation_pipeline import (
+from .utils.data_processing import inverse_scale_samples
+from .utils.evaluation import diversity_score, fid_score, regime_accuracy_from_flat
+from .utils.generation_pipeline import (
     generate_continuous_samples_from_model,
     generate_vqvae_samples_from_model,
 )

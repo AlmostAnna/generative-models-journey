@@ -6,7 +6,8 @@ This module contains tests to ensure basic correctness of the Transformer prior 
 
 import torch
 import torch.nn.functional as F
-from models.transformer import TimeSeriesTransformer
+
+from ..models.transformer import TimeSeriesTransformer
 
 
 def test_transformer_initialization():

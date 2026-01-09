@@ -7,7 +7,8 @@ training.
 
 import torch
 import torch.nn as nn
-from models.transformer import TimeSeriesTransformer
+
+from .models.transformer import TimeSeriesTransformer
 
 
 def train_transformer(

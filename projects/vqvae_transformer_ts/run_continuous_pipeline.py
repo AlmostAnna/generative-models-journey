@@ -10,13 +10,13 @@ import os
 import joblib
 import numpy as np
 import torch
-from data.generate_synthetic import generate_dataset
-from models.continuous_transformer import ContinuousTimeSeriesTransformer
-from train_continuous import train_continuous
 
-from utils.data_processing import inverse_scale_samples
-from utils.generation import generate_continuous_samples
-from utils.plotting import plot_continuous_samples
+from .data.generate_synthetic import generate_dataset
+from .models.continuous_transformer import ContinuousTimeSeriesTransformer
+from .train_continuous import train_continuous
+from .utils.data_processing import inverse_scale_samples
+from .utils.generation import generate_continuous_samples
+from .utils.plotting import plot_continuous_samples
 
 
 def main(args):

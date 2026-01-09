@@ -10,13 +10,13 @@ import os
 import joblib
 import numpy as np
 import torch
-from data.generate_synthetic import generate_dataset
-from train_transformer import train_transformer
-from train_vqvae import train_vqvae
 
-from utils.data_processing import inverse_scale_samples
-from utils.generation import generate_vqvae_samples
-from utils.plotting import plot_vqvae_ts_samples
+from .data.generate_synthetic import generate_dataset
+from .train_transformer import train_transformer
+from .train_vqvae import train_vqvae
+from .utils.data_processing import inverse_scale_samples
+from .utils.generation import generate_vqvae_samples
+from .utils.plotting import plot_vqvae_ts_samples
 
 
 def main(args):

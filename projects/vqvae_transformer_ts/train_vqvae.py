@@ -6,7 +6,8 @@ This module contains implementation of VQ-VAE model training.
 
 import torch
 import torch.nn.functional as F
-from models.vqvae import VQVAETimeSeries
+
+from .models.vqvae import VQVAETimeSeries
 
 
 def train_vqvae(

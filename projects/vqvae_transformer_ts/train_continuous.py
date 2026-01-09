@@ -6,7 +6,8 @@ This module contains implementation of continuous transformer training.
 
 import torch
 import torch.nn.functional as F
-from models.continuous_transformer import ContinuousTimeSeriesTransformer
+
+from .models.continuous_transformer import ContinuousTimeSeriesTransformer
 
 
 def train_continuous(

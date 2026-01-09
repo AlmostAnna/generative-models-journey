@@ -5,7 +5,8 @@ This module contains tests to ensure basic correctness of VQ-VAE implemetation.
 """
 
 import torch
-from models.vqvae import VectorQuantizer, VQVAETimeSeries
+
+from ..models.vqvae import VectorQuantizer, VQVAETimeSeries
 
 
 def test_vector_quantizer_shapes():

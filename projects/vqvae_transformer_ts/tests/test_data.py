@@ -6,7 +6,8 @@ of generated data.
 """
 
 import numpy as np
-from data.generate_synthetic import generate_dataset
+
+from ..data.generate_synthetic import generate_dataset
 
 
 def test_generate_dataset():

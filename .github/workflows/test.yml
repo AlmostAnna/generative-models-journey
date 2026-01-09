@@ -50,7 +50,7 @@ jobs:
         python -c "import torch; import numpy; import matplotlib; print('Basic dependencies OK')"
         # Check if our package parts can be imported correctly
         python -c "from src.diffusion import ScoreModel; print('src.diffusion imported OK')"
-        python -c "from projects.vqvae_transformer_ts.train_vqvae import train_vqvae; print('Project module imported OK')"
+        python -c "from projects.vqvae_transformer_ts.utils.data_processing import inverse_scale_samples; print('Project module imported OK')"
       shell: bash -l {0}
 
     - name: Run tests with coverage

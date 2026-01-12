@@ -14,6 +14,7 @@ dependencies:
   - arviz
   - scipy
   - pyro-ppl
+  - jupyter-book
   - pip:
 #    - torch
     - scikit-learn

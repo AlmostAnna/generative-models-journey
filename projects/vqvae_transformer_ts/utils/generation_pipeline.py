@@ -9,11 +9,11 @@ import joblib
 import numpy as np
 import torch
 
+from ..models.continuous_transformer import ContinuousTimeSeriesTransformer
+from ..models.transformer import TimeSeriesTransformer
+from ..models.vqvae import VQVAETimeSeries
 from .data_processing import inverse_scale_samples
 from .generation import generate_continuous_samples, generate_vqvae_samples
-from .models.continuous_transformer import ContinuousTimeSeriesTransformer
-from .models.transformer import TimeSeriesTransformer
-from .models.vqvae import VQVAETimeSeries
 
 
 def generate_vqvae_samples_from_model(

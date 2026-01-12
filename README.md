@@ -34,7 +34,7 @@ We follow a clear arc:
 
 Building on these foundations, I've extended the exploration to **time series with distinct regimes** (trending, mean-reverting, spiking):
 
-### [VQ-VAE + Transformer vs Continuous Autoregression](projects/vqvae-transformer-ts/README.md)
+### [VQ-VAE + Transformer vs Continuous Autoregression](projects/vqvae_transformer_ts/README.md)
 - Compares discrete tokenization vs continuous autoregressive approaches
 - **Key finding**: Continuous modeling better captures regime structure and generates more diverse samples
 - Includes quantitative evaluation: regime accuracy, diversity, and FID metrics

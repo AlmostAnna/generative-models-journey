@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from .models.continuous_transformer import ContinuousTimeSeriesTransformer
 from .models.transformer import TimeSeriesTransformer
 from .models.vqvae import VQVAETimeSeries
+from .utils.data_processing import inverse_scale_samples
 from .utils.generation import tokens_to_time_series
 
 
@@ -41,6 +42,7 @@ def generate_long_sequence_vqvae_transformer(
 
     with torch.no_grad():
         T_vqvae = vqvae_model.T  # Length handled by VQ-VAE (default=16)
+        D_vqvae = vqvae_model.D  # Channels handled by VQ-VAE (default=3)
         n_tokens_per_chunk = vqvae_model.n_tokens  # Latent length per VQ-VAE chunk
         max_transformer_len = (
             transformer_model.n_tokens
@@ -136,9 +138,34 @@ def generate_long_sequence_vqvae_transformer(
 
                 generated_chunks_list.append(decoded_chunk_tensor)
 
-            # Concatenate along the time dimension (dim=1)
+            # Concatenate along the time dimension (dim=1) after inverse scaling each chunk
+            processed_chunks_list = []
+            for (
+                chunk_tensor
+            ) in generated_chunks_list:  # chunk_tensor shape: [1, T_vqvae, D_vqvae]
+                chunk_np = (
+                    chunk_tensor.squeeze(0).cpu().numpy()
+                )  # Shape: [T_vqvae, D_vqvae]
+                chunk_scaled_np = chunk_np.reshape(1, -1)  # Shape for scaler: [1, T*D]
+                chunk_original_scale_np = inverse_scale_samples(
+                    scaler, chunk_scaled_np
+                )  # Shape: [1, T*D]
+                chunk_original_scale_reshaped = chunk_original_scale_np.reshape(
+                    T_vqvae, D_vqvae
+                )  # Shape: [T_vqvae, D_vqvae]
+
+                # Convert back to tensor and add batch dimension for concatenation
+                chunk_original_scale_tensor = torch.tensor(
+                    chunk_original_scale_reshaped, dtype=torch.float32, device=device
+                ).unsqueeze(
+                    0
+                )  # Shape: [1, T_vqvae, D_vqvae]
+
+                processed_chunks_list.append(chunk_original_scale_tensor)
+
+            # Concatenate the inverse-scaled chunks
             full_sequence_raw = torch.cat(
-                generated_chunks_list, dim=1
+                processed_chunks_list, dim=1
             )  # Shape [1, n_chunks_needed * T_vqvae, D_vqvae]
 
             # Truncate to the exact target length
@@ -249,8 +276,9 @@ def generate_long_sequence_continuous_transformer(
         final_samples = torch.cat(
             all_generated_samples, dim=0
         )  # Shape [n_samples, target_seq_len]
-        print(f"[Continuous-T] Final generated shape: {final_samples.shape}")
 
+        print(f"[Continuous-T] Final generated shape: {final_samples.shape}")
+    # TODO: add inverse scaling
     return final_samples
 
 
@@ -442,6 +470,19 @@ def main():
         raise ValueError(f"Unknown model_type: {args.model_type}")
 
     print(f"Saving generated data to {args.output_path}...")
+    print(
+        f"  Shape before save: {generated_data.shape}"
+    )  # generated_data is the return from the function
+    print(
+        f"  Value range (Channel 0) before save: [{generated_data[:, :, 0].min():.3f}, {generated_data[:, :, 0].max():.3f}]"
+    )
+    print(
+        f"  Value range (Channel 1) before save: [{generated_data[:, :, 1].min():.3f}, {generated_data[:, :, 1].max():.3f}]"
+    )
+    print(
+        f"  Value range (Channel 2) before save: [{generated_data[:, :, 2].min():.3f}, {generated_data[:, :, 2].max():.3f}]"
+    )
+
     torch.save(generated_data, args.output_path)
     print(
         f"Successfully saved {generated_data.shape[0]} samples of shape {generated_data.shape} to {args.output_path}"
